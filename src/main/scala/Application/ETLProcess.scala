@@ -114,7 +114,7 @@ object ETLProcess extends SparkBuilder{
       col("year")
     )
     database.truncateTable(schema,datesAdvertTableName,jdbcString)
-    database.insertDfIntoDB(datesDf.select(datesDfColumns: _*).limit(100),schema,datesAdvertTableName,jdbcString)
+    database.insertDfIntoDB(if(!debugging){ datesDf }else{ datesDf.select(datesDfColumns: _*).limit(100) },schema,datesAdvertTableName,jdbcString)
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted adverts dates data")
     }
