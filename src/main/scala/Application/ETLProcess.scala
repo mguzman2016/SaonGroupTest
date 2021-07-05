@@ -13,12 +13,10 @@ object ETLProcess extends SparkBuilder{
 
     //Global execution variables
     val rootLogger = Logger.getRootLogger
-    //Location to read jsons from
-    val readLocation = "s3n://technical-dev-test/raw/jobs/1.json"
     //Setting this to true will make use only a subset of the data to speed up testing process and will show dataframes
     val debugging = false
-    //Setting this to false will suppress spark logs, but will show "WARN" application log messages
-    val suppressMessages = false
+    //Setting this to true will suppress spark logs, but will show "WARN" application log messages
+    val suppressMessages = true
     //String to connect to redshift
     val cluster = "redshift-cluster-1.csvoccsyss6k.us-east-2.redshift.amazonaws.com"
     val port = "5439"
@@ -34,6 +32,8 @@ object ETLProcess extends SparkBuilder{
     val companyTableName = if(!debugging){ "dt_company" }else{ "tmp_companies_dt" }
     val advertTableName = if(!debugging){ "dt_advert" }else{ "tmp_adverts_dt" }
     val factTableName = if(!debugging){ "ft_applicants" }else{ "tmp_fact_tbl" }
+    //Location to read jsons from
+    val readLocation = if(!debugging){ "s3n://technical-dev-test/raw/jobs/" }else{ "s3n://technical-dev-test/raw/jobs/1.json" }
 
     //Build spark
     val spark = super.buildSpark(suppressMessages)
