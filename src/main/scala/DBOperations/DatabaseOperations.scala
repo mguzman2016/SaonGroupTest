@@ -20,6 +20,7 @@ class DatabaseOperations {
       option("url",jdbcString).
       option("driver","com.amazon.redshift.jdbc42.Driver").
       option("dbtable",schema+"."+tableName).
+      option("batchsize","15000").
       mode("append").
       save()
   }
@@ -50,11 +51,11 @@ class DatabaseOperations {
   * Parameters: tableName: Name of the table
   *             jdbcString: String containing the DB Data
   * */
-  def truncateTable (tableName: String, jdbcString: String) : Unit = {
+  def truncateTable (schema: String, tableName: String, jdbcString: String) : Unit = {
       val connection = DriverManager.getConnection(jdbcString)
       connection.setAutoCommit(true)
       val statement = connection.createStatement()
-      statement.execute(s"TRUNCATE TABLE $tableName")
+      statement.execute(s"TRUNCATE TABLE $schema.$tableName")
   }
 
 }

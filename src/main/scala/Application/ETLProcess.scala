@@ -16,7 +16,7 @@ object ETLProcess extends SparkBuilder{
     //Location to read jsons from
     val readLocation = "s3n://technical-dev-test/raw/jobs/1.json"
     //Setting this to true will make use only a subset of the data to speed up testing process and will show dataframes
-    val debugging = true
+    val debugging = false
     //Setting this to false will suppress spark logs, but will show "WARN" application log messages
     val suppressMessages = false
     //String to connect to redshift
@@ -26,6 +26,14 @@ object ETLProcess extends SparkBuilder{
     val user = "awsuser"
     val password = "S40nGr0up!"
     val jdbcString = s"jdbc:redshift://${cluster}:${port}/${db};user=${user};password=${password}"
+
+    //Table names
+    val schema = if(!debugging){ "public" }else{ "dev" }
+    val dateTableName = if(!debugging){ "dt_date" }else{ "tmp_dates_dt" }
+    val datesAdvertTableName = if(!debugging){ "dt_date_advert" }else{ "tmp_dates_advert_dt" }
+    val companyTableName = if(!debugging){ "dt_company" }else{ "tmp_companies_dt" }
+    val advertTableName = if(!debugging){ "dt_advert" }else{ "tmp_adverts_dt" }
+    val factTableName = if(!debugging){ "ft_applicants" }else{ "tmp_fact_tbl" }
 
     //Build spark
     val spark = super.buildSpark(suppressMessages)
@@ -91,8 +99,8 @@ object ETLProcess extends SparkBuilder{
     val database = new DatabaseOperations
 
     //Dates DT
-    database.truncateTable("tmp_dates_dt",jdbcString)
-    database.insertDfIntoDB(datesDf.limit(100),"public","tmp_dates_dt",jdbcString)
+    database.truncateTable(schema,dateTableName,jdbcString)
+    database.insertDfIntoDB(if(!debugging){ datesDf }else{ datesDf.limit(100) },schema,dateTableName,jdbcString)
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted dates data")
     }
@@ -105,22 +113,22 @@ object ETLProcess extends SparkBuilder{
       col("month"),
       col("year")
     )
-    database.truncateTable("tmp_dates_advert_dt",jdbcString)
-    database.insertDfIntoDB(datesDf.select(datesDfColumns: _*).limit(100),"public","tmp_dates_advert_dt",jdbcString)
+    database.truncateTable(schema,datesAdvertTableName,jdbcString)
+    database.insertDfIntoDB(datesDf.select(datesDfColumns: _*).limit(100),schema,datesAdvertTableName,jdbcString)
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted adverts dates data")
     }
 
     //Companies DT
-    database.truncateTable("tmp_companies_dt",jdbcString)
-    database.insertDfIntoDB(companiesDf,"public","tmp_companies_dt",jdbcString)
+    database.truncateTable(schema,companyTableName,jdbcString)
+    database.insertDfIntoDB(companiesDf,schema,companyTableName,jdbcString)
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted companies data")
     }
 
     //Adverts DT
-    database.truncateTable("tmp_adverts_dt",jdbcString)
-    database.insertDfIntoDB(advertsDf,"public","tmp_adverts_dt",jdbcString)
+    database.truncateTable(schema,advertTableName,jdbcString)
+    database.insertDfIntoDB(advertsDf,schema,advertTableName,jdbcString)
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted adverts data")
     }
@@ -136,7 +144,7 @@ object ETLProcess extends SparkBuilder{
       col("companyid").as("company_companyid"),
       col("firmidcrc32").as("company_firmcrc32")
     )
-    val dbCompaniesDf = database.readDfFromDB(spark,"public","tmp_companies_dt",jdbcString,companiesColumns)
+    val dbCompaniesDf = database.readDfFromDB(spark,schema,companyTableName,jdbcString,companiesColumns)
     if(debugging){
       dbCompaniesDf.show
     }
@@ -149,7 +157,7 @@ object ETLProcess extends SparkBuilder{
       col("advertid").as("adverts_advertid"),
       col("id").as("adverts_id")
     )
-    val dbAdvertsDf = database.readDfFromDB(spark,"public","tmp_adverts_dt",jdbcString,advertsColumns)
+    val dbAdvertsDf = database.readDfFromDB(spark,schema,advertTableName,jdbcString,advertsColumns)
     if(debugging){
       dbAdvertsDf.show
     }
@@ -177,8 +185,8 @@ object ETLProcess extends SparkBuilder{
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserting fact DF "+factDataframe.count)
     }
-    database.truncateTable("tmp_fact_tbl",jdbcString)
-    database.insertDfIntoDB(factDataframe,"public","tmp_fact_tbl",jdbcString)
+    database.truncateTable(schema,factTableName,jdbcString)
+    database.insertDfIntoDB(factDataframe,schema,factTableName,jdbcString)
 
     if(suppressMessages){
       rootLogger.warn("APPLICATION DEBUG: Inserted Fact DF")
