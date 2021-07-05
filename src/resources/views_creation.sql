@@ -56,6 +56,7 @@ select				case
 				    end as "age_range"
 				   ,count(distinct fa.applicantid) as "applications"
 from 				ft_applicants 		fa
+where 				fa.age > 0
 group by 			(fa.age/10)
 ;
 
